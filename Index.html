@@ -1,0 +1,48 @@
+const products = [
+  {id:1,name:"Pulse Wireless Headphones",category:"Audio",price:2450,emoji:"🎧",tag:"BESTSELLER"},
+  {id:2,name:"Aero Smart Watch",category:"Wearables",price:3250,emoji:"⌚",tag:"NEW"},
+  {id:3,name:"Sonic Mini Speaker",category:"Audio",price:1650,emoji:"🔊",tag:"POPULAR"},
+  {id:4,name:"Magnetic Fast Charger",category:"Accessories",price:890,emoji:"🔌",tag:"ESSENTIAL"},
+  {id:5,name:"Active Fit Band",category:"Wearables",price:1850,emoji:"⌁",tag:"SMART PICK"},
+  {id:6,name:"Everyday Phone Stand",category:"Accessories",price:550,emoji:"📱",tag:"EVERYDAY"},
+  {id:7,name:"USB-C Power Hub",category:"Mobile",price:1250,emoji:"⚡",tag:"USEFUL"},
+  {id:8,name:"Compact Earbuds",category:"Audio",price:1950,emoji:"🎵",tag:"FAN FAVOURITE"}
+];
+let cart = [];
+let activeFilter = "All";
+const money = n => "৳" + n.toLocaleString("en-BD");
+const grid = document.getElementById("productGrid");
+const cartDrawer = document.getElementById("cartDrawer");
+const overlay = document.getElementById("overlay");
+
+function renderProducts(){
+  const term = document.getElementById("searchInput").value.toLowerCase().trim();
+  const shown = products.filter(p => (activeFilter==="All" || p.category===activeFilter) && (p.name.toLowerCase().includes(term)||p.category.toLowerCase().includes(term)));
+  grid.innerHTML = shown.length ? shown.map(p=>`<article class="product-card"><div class="product-image"><span class="product-tag">${p.tag}</span><span class="product-placeholder" aria-hidden="true">${p.emoji}</span></div><div class="product-info"><div class="product-category">${p.category}</div><h3>${p.name}</h3><div class="product-bottom"><span class="price">${money(p.price)}</span><button class="add-button" data-add="${p.id}" aria-label="Add ${p.name} to bag">+</button></div></div></article>`).join("") : '<p>No products match your search.</p>';
+}
+function toast(message){const el=document.getElementById("toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2200)}
+function addToCart(id){const item=cart.find(x=>x.id===id);if(item)item.qty++;else cart.push({id,qty:1});renderCart();toast("Added to your bag")}
+function renderCart(){
+  const count=cart.reduce((s,x)=>s+x.qty,0);document.getElementById("cartCount").textContent=count;
+  document.getElementById("cartItems").innerHTML=cart.length?cart.map(x=>{const p=products.find(y=>y.id===x.id);return `<div class="cart-row"><div class="cart-emoji">${p.emoji}</div><div class="cart-row-info"><b>${p.name}</b><small>${money(p.price)} each</small></div><div class="qty-controls"><button data-qty="${p.id}" data-change="-1">−</button><span>${x.qty}</span><button data-qty="${p.id}" data-change="1">+</button></div></div>`}).join(""):'<p class="empty-cart">Your bag is waiting for something smart.</p>';
+  document.getElementById("cartTotal").textContent=money(cart.reduce((s,x)=>s+products.find(p=>p.id===x.id).price*x.qty,0));
+}
+function openCart(){cartDrawer.classList.add("open");overlay.classList.add("show")}
+function closeCart(){cartDrawer.classList.remove("open");overlay.classList.remove("show")}
+grid.addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(b)addToCart(Number(b.dataset.add))});
+document.querySelectorAll(".filter").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");activeFilter=b.dataset.filter;renderProducts()}));
+document.querySelectorAll(".category-card").forEach(b=>b.addEventListener("click",()=>{activeFilter=b.dataset.category;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x.dataset.filter===activeFilter));document.getElementById("shop").scrollIntoView();renderProducts()}));
+document.getElementById("searchInput").addEventListener("input",renderProducts);
+document.getElementById("showAll").addEventListener("click",()=>{activeFilter="All";document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x.dataset.filter==="All"));document.getElementById("searchInput").value="";renderProducts()});
+document.getElementById("cartButton").addEventListener("click",openCart);document.getElementById("closeCart").addEventListener("click",closeCart);overlay.addEventListener("click",closeCart);
+document.getElementById("cartItems").addEventListener("click",e=>{const b=e.target.closest("[data-qty]");if(!b)return;const id=Number(b.dataset.qty),item=cart.find(x=>x.id===id);item.qty+=Number(b.dataset.change);if(item.qty<=0)cart=cart.filter(x=>x.id!==id);renderCart()});
+document.getElementById("checkoutButton").addEventListener("click",()=>toast(cart.length?"Checkout needs a payment and order backend.":"Your bag is empty."));
+document.getElementById("trackButton").addEventListener("click",()=>{
+  const id=document.getElementById("orderId").value.trim().toUpperCase(),result=document.getElementById("trackResult");
+  if(!id){result.textContent="Please enter your order ID.";return}
+  if(id==="STX-1024"){result.innerHTML='<span class="status-pill">● In transit</span><br><b>Order STX-1024</b><br>Your demo order has been shipped and is on its way. <br><small>Placed: 01 Nov 2026 · Status: In transit</small>'}
+  else{result.textContent="We couldn't find that demo order. Please check the ID or contact STEXORA support."}
+});
+document.getElementById("menuToggle").addEventListener("click",()=>document.getElementById("nav").classList.toggle("open"));
+document.querySelectorAll("#nav a").forEach(a=>a.addEventListener("click",()=>document.getElementById("nav").classList.remove("open")));
+renderProducts();renderCart();
